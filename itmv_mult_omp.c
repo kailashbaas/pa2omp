@@ -74,17 +74,30 @@ void mv_compute(int i) {
  */
 void parallel_itmv_mult(int threadcnt, int mappingtype, int chunksize) {
   /*Your solutuion with OpenMP*/
-  int i, k;
 
-  for (k = 0; k < no_iterations; k++) {
-    for (i = 0; i < matrix_dim; i++) {
-      mv_compute(i);
-    }
+	//Enable this amt of threads to do processing
+	omp_set_num_threads(threadcnt);
 
-    for (i = 0; i < matrix_dim; i++) {
-      vector_x[i] = vector_y[i];
-    }
-  }
+
+	int i, k;
+
+	#pragma parallel for schedule(mappingtype, chunksize)
+	{
+		for (k = 0; k < no_iterations; k++) {
+			for (i = 0; i < matrix_dim; i++) {
+				mv_compute(i);
+			}
+
+
+			for (i = 0; i < matrix_dim; i++) {
+				vector_x[i] = vector_y[i];
+			}
+			
+
+		}
+	}/*end pragma parallel for */
+
+
 }
 
 /*-------------------------------------------------------------------
