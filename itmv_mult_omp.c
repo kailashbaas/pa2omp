@@ -75,29 +75,33 @@ void mv_compute(int i) {
 void parallel_itmv_mult(int threadcnt, int mappingtype, int chunksize) {
   /*Your solutuion with OpenMP*/
 
-	//Enable this amt of threads to do processing
-	omp_set_num_threads(threadcnt);
+    //Enable this amt of threads to do processing
+    omp_set_num_threads(threadcnt);
 
 
-	int i, k;
+    int i, k;
 
-	#pragma parallel for schedule(mappingtype, chunksize)
-	{
-		for (k = 0; k < no_iterations; k++) {
-			for (i = 0; i < matrix_dim; i++) {
-				mv_compute(i);
-			}
+    for (k = 0; k < no_iterations; k++) {
+        if (mappingtype == BLOCK_MAPPING)
+            omp_set_schedule(omp_sched_static, ceil(no_iterations / threadcnt));
+        else if (mappingtype == BLOCK_CYCLIC)
+            omp_set_schedule(omp_sched_static, chunksize);
+        else if (mappingtype == BLOCK_DYNAMIC)
+            omp_set_schedule(omp_sched_dynamic, chunksize);
+        else
+            omp_set_schedule(omp_sched_guided, chunksize);
 
+        #pragma omp parallel for schedule (runtime) shared(i)
+        for (i = 0; i < matrix_dim; i++) {
+            mv_compute(i);
+        }
 
-			for (i = 0; i < matrix_dim; i++) {
-				vector_x[i] = vector_y[i];
-			}
-			
+        #pragma omp parallel for schedule (runtime) shared(i)
+        for (i = 0; i < matrix_dim; i++) {
+            vector_x[i] = vector_y[i];
+        }
 
-		}
-	}/*end pragma parallel for */
-
-
+    }
 }
 
 /*-------------------------------------------------------------------
